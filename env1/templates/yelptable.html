@@ -1,0 +1,38 @@
+
+<h1> Tastes of {{city}} </h1>
+
+
+<form action="/bball" method="POST">
+    Sort By:<br/>
+    <input type="radio" name="sortby" value="price"/> Price <br/>
+    <input type="radio" name="sortby" value="rating"/>Rating <br/>
+<!--
+    <br/>
+    Sort Order:<br/>
+    <input type="radio" name="sortorder" value="asc"/> Ascending <br/>
+    <input type="radio" name="sortorder" value="desc"/> Descending <br/>
+    <br/> -->
+    <input type="submit" name="update" value="Update"/>
+    <input type="submit" name="next" value="redirect"/>
+    <br/>
+    <br/>
+</form>
+
+<table border=1>
+    <tr>
+
+        <th>Name</th>
+        <th>Price</th>
+        <th>Rating</th>
+        <th>Address</th>
+    </tr>
+{% for res in list_of_res %}
+    <tr>
+
+        <td>{{res[2]}}</td>
+        <td>{{res[3]}}</td>
+        <td>{{res[4]}}</td>
+        <td>{{res[5]}}</td>
+    </tr>
+{% endfor %}
+</table>
