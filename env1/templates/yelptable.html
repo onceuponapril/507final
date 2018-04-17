@@ -2,33 +2,33 @@
 <h1> Tastes of {{city}} </h1>
 
 
-<form action="/bball" method="POST">
-    Sort By:<br/>
-    <input type="radio" name="sortby" value="price"/> Price <br/>
+<!-- <form action="/yelptable" method="POST">
+    Sort By:<br/> -->
+    <!-- <input type="radio" name="sortby" value="price"/> Price <br/>
     <input type="radio" name="sortby" value="rating"/>Rating <br/>
-<!--
-    <br/>
-    Sort Order:<br/>
-    <input type="radio" name="sortorder" value="asc"/> Ascending <br/>
-    <input type="radio" name="sortorder" value="desc"/> Descending <br/>
-    <br/> -->
-    <input type="submit" name="update" value="Update"/>
-    <input type="submit" name="next" value="redirect"/>
-    <br/>
-    <br/>
-</form>
 
+    <input type="submit" name="update" value="Sort by (Top->Bottom)"/> -->
+    <!-- <br/>
+    <br/>
+</form> -->
+
+<form action="/lyftlist" method="POST">
+  <label>Please enter your departure location:</label>
+  <input type="text" name='user_location'></br>
+
+  <input type="submit" value="Go"/>
 <table border=1>
     <tr>
-
+        <th></th>
         <th>Name</th>
         <th>Price</th>
         <th>Rating</th>
         <th>Address</th>
     </tr>
-{% for res in list_of_res %}
     <tr>
 
+      {% for res in list_of_res %}
+    <td><input type="checkbox" name="store" value ="{{res[0]}}"></td>
         <td>{{res[2]}}</td>
         <td>{{res[3]}}</td>
         <td>{{res[4]}}</td>
@@ -36,3 +36,4 @@
     </tr>
 {% endfor %}
 </table>
+</form>

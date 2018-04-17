@@ -141,8 +141,9 @@ def get_data(user_input):
 
                     except:
                             pass
-
-
+# 
+# def sorteat(cityname,sortby):
+#     statement=sortby  desc
 
 
 # print(get_data('Ann Arbor'))
