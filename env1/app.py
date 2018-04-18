@@ -1,12 +1,7 @@
 
 from flask import Flask, render_template,request,redirect
 import fn
-import test
 
-# 1.user input city and number of resturant wanna check--TABLE
-# 2. sort by rating and price- choose resturants--TABLE
-# 3.INPUT YOUR ORIGIN--TABLE:ESTIMATION
-#4.MAP
 
 app = Flask(__name__)
 
@@ -58,12 +53,19 @@ def lyft():
         eatid_list=request.form.getlist('store')
         origin=request.form['user_location']
         lyft = fn.lyft_data()
-        lyft.create_table(origin)
-    return
+        fare_table=lyft.create_table(origin,eatid_list)
+        return render_template('lyftlist.html',list_of_lyft=fare_table)
 
-# @app.route('/lyft/',methods=['GET', 'POST'])
-# def lyft():
-#     return
+    else:
+        return render_template("yelptable.html")
+
+@app.route('/lyftupdate',methods=['GET', 'POST'])
+def lyftupdate():
+    if request.method == 'POST':
+        sortby = request.form['sortby']
+        lyft = fn.lyft_data()
+        lyft_up=lyft.sort_table(sortby)
+    return render_template('lyftupdate.html',requirement=sortby,update_lyft=lyft_up)
 
 
 if __name__ == '__main__':

@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+import secrets
 import requests
 import sqlite3
 import csv
@@ -9,7 +10,13 @@ from lyft_rides.auth import ClientCredentialGrant
 from lyft_rides.session import Session
 from lyft_rides.client import LyftRidesClient
 
-map_api='AIzaSyCDFrR1bowszXuQLUG8f3pj61Q_Uc_mnzA'
+map_api=secrets.map_api
+
+client_id=secrets.client_id
+client_secret=secrets.client_secret
+access_token=secrets.access_token
+scope= secrets.scope
+token_type=secrets.token_type
 # 1.cache
 CACHE_FNAME = 'checkcache.json'
 try:
@@ -62,7 +69,7 @@ statement = '''
 # cur.execute(statement)
 
 statement = '''
-    DROP TABLE IF EXISTS 'LIMITED_RIDE';
+    DROP TABLE IF EXISTS 'RIDE';
 '''
 # cur.execute(statement)
 
@@ -78,25 +85,28 @@ statement='''CREATE TABLE EAT(
 # cur.execute(statement)
 # conn.commit()
 
-statement='''CREATE TABLE LIMITED_RIDE(
-'Id' INTEGER NULL PRIMARY KEY AUTOINCREMENT,
+statement='''CREATE TABLE RIDE(
+'Id' INTEGER NOT NULL PRIMARY KEY,
 'Origin'TEXT NOT NULL,
 'Origin_geo' TEXT,
+'Name' TEXT,
 'Destination' TEXT,
 'Destination_geo' TEXT,
-'Estimated_time(minute)' TEXT,
-'Estimated_distance(miles)' TEXT,
-'Estimated_max_cost(dollar)' TEXT,
-'Estimated_min_cost(dollar)' TEXT)
+'Estimated_minutes' TEXT,
+'Estimated_miles' TEXT,
+'Estimated_max_cost' TEXT,
+'Estimated_min_cost'TEXT,
+'EAT_ID'INTEGER,
+FOREIGN KEY(EAT_ID) REFERENCES EAT(Id))
 '''
 # cur.execute(statement)
 # conn.commit()
-#
+# #
 #
 
 # 3.1 google maps
 class google_map():
-    DBNAME='Foddie_Go.sqlite'
+    DBNAME='test.sqlite'
     conn = sqlite3.connect(DBNAME,check_same_thread=False)
     cur = conn.cursor()
 
@@ -127,6 +137,27 @@ class google_map():
 
 # user_input_city='San Francisco'
 class Yelpeat():
+    DBNAME='test.sqlite'
+    conn = sqlite3.connect(DBNAME,check_same_thread=False)
+    cur = conn.cursor()
+    statement = '''
+        DROP TABLE IF EXISTS 'EAT';
+    '''
+    cur.execute(statement)
+    conn.commit()
+
+    statement='''CREATE TABLE EAT(
+    'Id' INTEGER NULL PRIMARY KEY AUTOINCREMENT,
+    'City' TEXT NOT NULL,
+    'Name' TEXT NOT NULL,
+    'Price' TEXT,
+    'Rating' NUMERIC,
+    'address' TEXT,
+    'lag_log' TEXT
+    )'''
+    cur.execute(statement)
+    conn.commit()
+
     def __init__(self,user_input_city):
         self.city=user_input_city
 
@@ -150,7 +181,7 @@ class Yelpeat():
                 param={}
                 param['find_desc']="Top+100+Places+to+Eat"
                 param['find_loc']=self.city
-                n=range(9)
+                n=range(11)
                 for i in n:
                             param['start']=i*10
                             html=make_request_using_cache(search_url,param)
@@ -179,32 +210,31 @@ class Yelpeat():
 
 
 class lyft_data():
+    # DBNAME='test.sqlite'
+    # conn = sqlite3.connect(DBNAME,check_same_thread=False)
+    # cur = conn.cursor()
+    #
+
+
     def __init__(self):
         # self.conn = sqlite3.connect(DBNAME,check_same_thread=False)
         # self.cur = conn.cursor()
-        # self.cur.execute("INSERT INTO LIMITED_RIDE ('Origin') VALUES('JI')")
+        # self.cur.execute("INSERT INTO RIDE ('Origin') VALUES('JI')")
         # self.conn.commit()
         pass
 
 
     def estmate_cost(self,start,end,type="lyft"):
-        client_id='KZ-TZqsDDPf9'
-        client_secret='K7GU9SoiwvUMcr-QyzQ_ynaqlGpEF9Ww'
-        access_token='7ze30S6B+qvt4f7vet2nm6PHg8q8wfQWEIg3lxeP1EPgHoLFagPZuevnqm07lXx19gwXZZMNdhwSRuCc2yVG+NacsXJifU3M8sJyjMavSvz1t6RpLCmL8u4='
-        scope= "public"
-        token_type='bearer'
         auth_flow = ClientCredentialGrant(client_id, client_secret,scope,)
         session = auth_flow.get_session()
         client = LyftRidesClient(session)
 
-        print(str(start))
         s_lat=start.split(',')[0]
         s_log=start.split(',')[1]
         e_lat=end.split(',')[0]
         e_log=end.split(',')[1]
         # e_lat=end[0].split(',')[0]
         # e_log=end[0].split(',')[1]S
-
         est_dict={}
         try:
             cost_resp=client.get_cost_estimates(start_latitude=s_lat, start_longitude=s_log, end_latitude=e_lat, end_longitude=e_log).json
@@ -212,7 +242,7 @@ class lyft_data():
 
             est_dict['start']=start
             est_dict['end']=end
-            est_dict['es_time']=est["estimated_duration_seconds"]/60
+            est_dict['es_time']=est["estimated_duration_seconds"]//60
             est_dict['es_distance']=est["estimated_distance_miles"]
             est_dict['es_cost_max']=est["estimated_cost_cents_max"]/100
             est_dict['es_cost_min']=est["estimated_cost_cents_min"]/100
@@ -226,27 +256,65 @@ class lyft_data():
 
         return est_dict
 
-    def create_table(self,origin):
+    def create_table(self,origin,list_of_dest):
         #drop table
-        statement = "SELECT lag_log FROM EAT"
-        end_list=cur.execute(statement).fetchall()
+        statement = '''
+            DROP TABLE IF EXISTS 'RIDE';
+        '''
+        cur.execute(statement)
+
+        statement='''CREATE TABLE RIDE(
+        'Id' INTEGER NOT NULL PRIMARY KEY,
+        'Origin'TEXT NOT NULL,
+        'Origin_geo' TEXT,
+        'Name' TEXT,
+        'Destination' TEXT,
+        'Destination_geo' TEXT,
+        'Estimated_minutes' TEXT,
+        'Estimated_miles' TEXT,
+        'Estimated_max_cost' TEXT,
+        'Estimated_min_cost'TEXT,
+        'EAT_ID'INTEGER,
+        FOREIGN KEY(EAT_ID) REFERENCES EAT(Id))
+        '''
+        cur.execute(statement)
+        conn.commit()
+
         start_add=google_map(origin).lat_log()
-        for each in end_list:
+
+        for fkid in list_of_dest:
+            statement_dest= "SELECT lag_log, name FROM EAT WHERE EAT.Id="
+            statement_dest+=fkid
+            dest_add=cur.execute(statement_dest).fetchone()[0]
+            dest_name=cur.execute(statement_dest).fetchone()[1]
+            print(dest_name)
+
+            # for each in end_list:
             # end_add=google_map(str(each).strip('()')).lat_log()
-            ridedb=self.estmate_cost(start_add,each[0])
-            print(ridedb)
-            param=(origin,start_add,ridedb['es_time'],ridedb['es_distance'],ridedb['es_cost_max'],ridedb['es_cost_min'])
-            statement='''INSERT INTO LIMITED_RIDE VALUES(Null,?,?,NULL,Null,?,?,?,?)'''
+            ridedb=self.estmate_cost(start_add,dest_add)
+            # print(ridedb)
+            param=(fkid,origin,start_add,dest_name,dest_add,ridedb['es_time'],ridedb['es_distance'],ridedb['es_cost_max'],ridedb['es_cost_min'])
+            statement='''INSERT INTO RIDE (EAT_ID,Origin,Origin_geo,Name,Destination_geo,Estimated_minutes, Estimated_miles,Estimated_max_cost,Estimated_min_cost)
+            VALUES(?,?,?,?,?,?,?,?,?)'''
             cur.execute(statement,param)
             conn.commit()
 
-        update_one='UPDATE LIMITED_RIDE SET Destination_geo=(SELECT lag_log FROM EAT where LIMITED_RIDE.Id=EAT.Id)'
-        cur.execute(update_one)
+        update='UPDATE RIDE SET Destination=(SELECT Address FROM EAT where RIDE.EAT_ID=EAT.Id)'
+        cur.execute(update)
         conn.commit()
-# 隐患：id不匹配怎么办：还是用地址比较好 where"+地址+‘EAT.Address’
-        update_two='UPDATE LIMITED_RIDE SET Destination=(SELECT Address FROM EAT where LIMITED_RIDE.Id=EAT.Id)'
-        cur.execute(update_two)
-        conn.commit()
+
+        getdata='SELECT * FROM RIDE'
+        lyft_db=cur.execute(getdata).fetchall()
+
+        return lyft_db
+
+    def sort_table(self, key):
+        statement="SELECT * FROM RIDE ORDER BY "
+        statement+=key
+        lyft_up=cur.execute(statement).fetchall()
+        return lyft_up
+
+
 
 
 # conn.close()

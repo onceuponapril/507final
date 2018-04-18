@@ -1,33 +1,35 @@
 
-<h1> The cost of possible journey </h1>
+<h1> Prediction of your Foodies' journey </h1>
+<h2>Wanna take a lyft to these places? Check it out: </h2>
 
 
-<!-- <form action="/yelptable" method="POST">
-    Sort By:<br/>
-    <input type="radio" name="sortby" value="price"/> Price <br/>
-    <input type="radio" name="sortby" value="rating"/>Rating <br/>
-
-    <input type="submit" name="update" value="Sort by (Top->Bottom)"/>
-    <input type="submit" name="next" value="Go"/>
+<form action="/lyftupdate" method="POST">
+    You can sort by:<br/>
+    <input type="radio" name="sortby" value="Estimated_miles"/>Distance<br/>
+    <input type="radio" name="sortby" value="Estimated_minutes"/>Waiting time <br/>
+    <input type="radio" name="sortby" value="Estimated_max_cost"/>Cost <br/>
+    <input type="submit" name="update" value="Sort by(lowest->highet)"/>
     <br/>
     <br/>
-</form> -->
+</form>
 
 <table border=1>
     <tr>
-        <th></th>
         <th>Name</th>
-        <th>Price</th>
-        <th>Rating</th>
         <th>Address</th>
+        <th>Distance (mile)</th>
+        <th>Waiting time for lyft (minute)</th>
+        <th>Estimated Costs (dollar)</th>
+
     </tr>
     <tr>
-      {% for res in list_of_res %}
+      {% for est in list_of_lyft %}
     <!-- <td><input type="checkbox" onclick="myFunction()"<td> -->
-        <td>{{res[2]}}</td>
-        <td>{{res[3]}}</td>
-        <td>{{res[4]}}</td>
-        <td>{{res[5]}}</td>
+        <td>{{est[3]}}</td>
+        <td>{{est[4]}}</td>
+        <td>{{est[6]}}</td>
+        <td>{{est[7]}}</td>
+        <td>{{est[8]}}</td>
     </tr>
 {% endfor %}
 </table>
