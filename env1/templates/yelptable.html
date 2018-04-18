@@ -1,22 +1,12 @@
 
+<html>
+
 <h1> Tastes of {{city}} </h1>
 
 
-<!-- <form action="/yelptable" method="POST">
-    Sort By:<br/> -->
-    <!-- <input type="radio" name="sortby" value="price"/> Price <br/>
-    <input type="radio" name="sortby" value="rating"/>Rating <br/>
-
-    <input type="submit" name="update" value="Sort by (Top->Bottom)"/> -->
-    <!-- <br/>
-    <br/>
-</form> -->
-
 <form action="/lyftlist" method="POST">
-  <label>Please enter your departure location:</label>
-  <input type="text" required name='user_location'></br>
+  <label>Step One: pick the restuatant(s) you wanna try:</label>
 
-  <input type="submit" value="Go"/>
 <table border=1>
     <tr>
         <th></th>
@@ -35,5 +25,10 @@
         <td>{{res[5]}}</td>
     </tr>
 {% endfor %}
-</table>
+</table></br>
+
+<label>Step Two: please enter your departure:</label>
+<input type="text" required name='user_location'><input type="submit" value="Go"/>
 </form>
+
+</html>
