@@ -59,21 +59,14 @@ def make_request_using_cache(url,params=None):
 #2 Create DB
 # 3 WRITE INTO DB
 
-def create_first_table():
-    DBNAME='FoodieGo.sqlite'
+def create_first_table(db='FoodieGo.sqlite'):
+    DBNAME=db
     conn = sqlite3.connect(DBNAME,check_same_thread=False)
     cur = conn.cursor()
     # #
-    statement = '''
-        DROP TABLE IF EXISTS 'EAT';
-    '''
-    cur.execute(statement)
 
-    statement = '''
-        DROP TABLE IF EXISTS 'RIDE';
-    '''
-    cur.execute(statement)
-    #
+
+
     statement='''CREATE TABLE EAT(
     'Id' INTEGER NULL PRIMARY KEY AUTOINCREMENT,
     'City' TEXT NOT NULL,
@@ -101,6 +94,9 @@ def create_first_table():
     '''
     cur.execute(statement)
     conn.commit()
+    conn.close()
+
+
 # #
 # create_first_table()
 
@@ -123,19 +119,16 @@ def google_map(address):
         return loc
 
 
-
-# print(google_map('North Quad,Ann Arbor'))
-# 3. yelp data
-
-# user_input_city='San Francisco'
+# 3.2 yelp
 class Yelpeat():
 
-    def __init__(self,user_input_city):
+    def __init__(self,user_input_city,db='FoodieGo.sqlite'):
         self.city=user_input_city
         self.cachedict = {}
+        self.db=db
 
     def get_data(self):
-        DBNAME='FoodieGo.sqlite'
+        DBNAME=self.db
         conn = sqlite3.connect(DBNAME,check_same_thread=False)
         cur = conn.cursor()
 
@@ -146,18 +139,15 @@ class Yelpeat():
         else:
             result = self.create_db()
 
-            # if not result:
-            #     return False
-
             statement='SELECT * FROM EAT where EAT.City='+"'"+str(self.city)+"'"
             datalist=cur.execute(statement).fetchall()
-            # self.output_cache()
+
 
             return datalist
         conn.close()
 
     def create_db(self):
-        DBNAME='FoodieGo.sqlite'
+        DBNAME=self.db
         conn = sqlite3.connect(DBNAME,check_same_thread=False)
         cur = conn.cursor()
 
@@ -190,88 +180,10 @@ class Yelpeat():
                     pass
         conn.close()
 
-# print(Yelpeat('San_Francisco').create_db())
-
-        # scrap_raw=self.scrap_data()
-        # if scrap_raw==False:
-        #     return False
-        # else:
-        #     for list_of_eat in scrap_raw:
-        #         for eat in list_of_eat:
-        #                 try:
-        #                     name=eat.find('a',class_='biz-name').text.strip()
-        #                     price=eat.find('span',class_="business-attribute price-range").text.strip()
-        #                     rating=eat.find('div',class_='i-stars')['title'][:3]
-        #                     add=eat.find('address').text.strip()
-        #                     params=(self.city,name,price,rating,add)
-        #                     statement='''INSERT INTO EAT VALUES(Null,?,?,?,?,?)'''
-        #                     cur.execute(statement,params)
-        #                     conn.commit()
-        #
-        #                 except Exception as e:
-        #                             print(e)
-        #         conn.close()
-        #
-        #         return True
-                                    # tempDict = {}
-                                    # tempDict['name'] = name
-                                    # tempDict['price'] = price
-                                    # tempDict['rating'] = rating
-                                    # tempDict['address'] = add
-                                    # self.cachedict[self.city].append(tempDict)
-                                    # cur.execute(statement,params)
-                                    # conn.commit()
-
-
-    # def scrap_data(self):
-    #         baseurl="https://www.yelp.com/"
-    #         search_url=baseurl+'search'
-    #         param={}
-    #         param['find_desc']="Top+100+Places+to+Eat"
-    #         param['find_loc']=self.city
-    #         # self.cachedict[self.city] = []
-    #         list_of_scrap=[]
-    #         n=range(11)
-    #         count=0
-    #         for i in n:
-    #             # while count<100:
-    #                 param['start']=i*10
-    #                 html=make_request_using_cache(search_url,param)
-    #
-    #                 soup_a = BeautifulSoup(html, 'html.parser')
-    #                 list_of_eat=soup_a.find_all("li",class_="regular-search-result")
-    #                         # print(list_of_eat)
-    #                         # if list_of_eat==[]:
-    #                         #     return False
-    #                 # if list_of_eat==None:
-    #                 #         print('no information,try again')
-    #                 #         pass
-    #                 # else:
-    #                 #         count=+1
-    #                 list_of_scrap.append(list_of_eat)
-                    #         # print(list_of_scrap)
-                    # except:
-                    #     pass
-
-                    # except Exception as e:
-                    #             print(e)
-
-
-
-
-    # def output_cache(self):
-    #     with open('advanced_cache.json', 'w') as f:
-    #         f.write(json.dumps(self.cachedict))
-
-
 
 class lyft_data():
 
     def __init__(self):
-        # self.conn = sqlite3.connect(DBNAME,check_same_thread=False)
-        # self.cur = conn.cursor()
-        # self.cur.execute("INSERT INTO RIDE ('Origin') VALUES('JI')")
-        # self.conn.commit()
         pass
 
 
@@ -284,8 +196,7 @@ class lyft_data():
         s_log=start.split(',')[1]
         e_lat=end.split(',')[0]
         e_log=end.split(',')[1]
-        # e_lat=end[0].split(',')[0]
-        # e_log=end[0].split(',')[1]S
+
         est_dict={}
         try:
             cost_resp=client.get_cost_estimates(start_latitude=s_lat, start_longitude=s_log, end_latitude=e_lat, end_longitude=e_log).json
@@ -307,8 +218,8 @@ class lyft_data():
 
         return est_dict
 
-    def create_table(self,origin,list_of_dest):
-        DBNAME='FoodieGo.sqlite'
+    def create_table(self,origin,list_of_dest, db="FoodieGo.sqlite"):
+        DBNAME= db
         conn = sqlite3.connect(DBNAME,check_same_thread=False)
         cur = conn.cursor()
         #drop table
@@ -367,8 +278,8 @@ class lyft_data():
 
         return lyft_db
 
-    def sort_table(self, key):
-        DBNAME='FoodieGo.sqlite'
+    def sort_table(self, key,db='FoodieGo.sqlite'):
+        DBNAME=db
         conn = sqlite3.connect(DBNAME,check_same_thread=False)
         cur = conn.cursor()
 
@@ -378,3 +289,20 @@ class lyft_data():
         conn.close()
 
         return lyft_up
+
+DBNAME='FoodieGo.sqlite'
+conn = sqlite3.connect(DBNAME,check_same_thread=False)
+cur = conn.cursor()
+
+sql = 'SELECT City FROM EAT'
+results = cur.execute(sql)
+result_list = results.fetchall()
+
+sql = '''
+    SELECT Price,Rating,Address
+    FROM EAT
+    WHERE Name="TK WU"
+'''
+results = cur.execute(sql)
+result_list = results.fetchall()
+print(result_list)
