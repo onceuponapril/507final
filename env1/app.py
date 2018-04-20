@@ -30,12 +30,14 @@ def yelptable():
         # sortby = request.form['sortby']
         # cityname=hello().city
         input_city = request.form['cityname']
-        # number = request.form['number']
-        # go check DB
-        # try:
+
+
         yelp_db=fn.Yelpeat(input_city).get_data()
+        error_message = ""
+        if not yelp_db:
+            error_message = "Please input a valid address."
         # yelp_db=test.get_data(input_city)
-        return render_template("yelptable.html",city=input_city,list_of_res=yelp_db)
+        return render_template("yelptable.html",city=input_city,list_of_res=yelp_db,ERROR=error_message)
         # city=hello().request.form['cityname']
         # Yelpeat().sorteat(sortby)
     else:

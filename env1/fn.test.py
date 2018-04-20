@@ -1,92 +1,90 @@
 import unittest
 from fn import *
 
-
+#
 class TestDatabase(unittest.TestCase):
 
-    def test_bar_table(self):
+    def test_eat_table(self):
         conn = sqlite3.connect(DBNAME)
         cur = conn.cursor()
 
-        sql = 'SELECT Company FROM Bars'
+        sql = 'SELECT City FROM EAT'
         results = cur.execute(sql)
         result_list = results.fetchall()
-        self.assertIn(('Sirene',), result_list)
-        self.assertEqual(len(result_list), 1795)
+        self.assertIn(('Ann Arbor',), result_list)
+        self.assertEqual(len(result_list), )
 
         sql = '''
-            SELECT Company, SpecificBeanBarName, CocoaPercent,
-                   Rating, BroadBeanOrigin
-            FROM Bars
-            WHERE Company="Woodblock"
-            ORDER BY Rating DESC
+            SELECT Price,Rating,Address
+            FROM EAT
+            WHERE Name="TK WU"
         '''
         results = cur.execute(sql)
         result_list = results.fetchall()
-        #print(result_list)
-        self.assertEqual(len(result_list), 8)
+        self.assertEqual(result_list[0][3], )
         self.assertEqual(result_list[0][3], 4.0)
 
         conn.close()
 
-    def test_country_table(self):
+    def test_ride_table(self):
         conn = sqlite3.connect(DBNAME)
         cur = conn.cursor()
 
         sql = '''
-            SELECT EnglishName
-            FROM Countries
-            WHERE Region="Oceania"
+            SELECT Destination_geo
+            FROM RIDE
+            WHERE Destination="TK WU"
         '''
-        results = cur.execute(sql)
-        result_list = results.fetchall()
-        self.assertIn(('Australia',), result_list)
-        self.assertEqual(len(result_list), 27)
-
-        sql = '''
-            SELECT COUNT(*)
-            FROM Countries
-        '''
-        results = cur.execute(sql)
-        count = results.fetchone()[0]
-        self.assertEqual(count, 250)
-
-        conn.close()
-
-    def test_joins(self):
-        conn = sqlite3.connect(DBNAME)
-        cur = conn.cursor()
-
-        sql = '''
-            SELECT Alpha2
-            FROM Bars
-                JOIN Countries
-                ON Bars.CompanyLocationId=Countries.Id
-            WHERE SpecificBeanBarName="Hacienda Victoria"
-                AND Company="Arete"
-        '''
-        results = cur.execute(sql)
-        result_list = results.fetchall()
-        self.assertIn(('US',), result_list)
-        conn.close()
-
-class TestBarSearch(unittest.TestCase):
-
-    def test_bar_search(self):
-        results = process_command('bars ratings top=1')
-        self.assertEqual(results[0][0], 'Chuao')
-
-        results = process_command('bars cocoa bottom=10')
-        self.assertEqual(results[0][0], 'Guadeloupe')
-
-        results = process_command('bars sellcountry=CA ratings top=5')
-        self.assertEqual(results[0][3], 4.0)
-
-        results = process_command('bars sourceregion=Africa ratings top=5')
-        self.assertEqual(results[0][3], 4.0)
+        result = cur.execute(sql).fetchall()
+        self.assertEqual(result, )
 
 
-class TestCompanySearch(unittest.TestCase):
+
+#         conn.close()
+#
+#     def test_joins(self):
+#         conn = sqlite3.connect(DBNAME)
+#         cur = conn.cursor()
+#
+#         sql = '''
+#             SELECT Alpha2
+#             FROM Bars
+#                 JOIN Countries
+#                 ON Bars.CompanyLocationId=Countries.Id
+#             WHERE SpecificBeanBarName="Hacienda Victoria"
+#                 AND Company="Arete"
+#         '''
+#         results = cur.execute(sql)
+#         result_list = results.fetchall()
+#         self.assertIn(('US',), result_list)
+#         conn.close()
+
+class TestAccessData(unittest.TestCase):
+
+    def test_google_lyft(self):
+        resultA=google_map('North Quad,Ann Arbor')
+        resultB=google_map('TK WU,Ann Arbor')
+
+        self.assertEqual(results[0], )
+        self.assertEqual(results[1], )
+        lyft_result=estmate_cost(resultA,resultB)
+        self.assertEqual(lyft_result['es_time'], )
+        self.assertEqual(lyft_result['es_distance'], )
+        self.assertEqual(lyft_result['es_cost_max'], )
+        self.assertEqual(lyft_result['es_cost_min'], )
+
+
+    def test_yelp_data(self):
+        yelpdt=Yelpeat('Ann Arbor')
+        results=yelpdt.scrape_data()
+        self.assertEqual(results[0][name], )
+        self.assertEqual(results[0][rating], )
+        self.assertEqual(results[0][address], )
+        self.assertEqual(results[0][price], )
+
+
+class TestStoreData(unittest.TestCase):
+
 
     def test_company_search(self):
         results = process_command('companies region=Europe ratings top=5')
@@ -99,15 +97,17 @@ class TestCompanySearch(unittest.TestCase):
         self.assertEqual(results[0][0], 'Videri')
         self.assertGreater(results[0][2], 0.79)
 
-class TestCountrySearch(unittest.TestCase):
+class TestProcessData(unittest.TestCase):
 
-    def test_country_search(self):
-        results = process_command('countries sources ratings bottom=5')
+    def test_eat_process(self):
+        result=Yelpeat().get_data()
         self.assertEqual(results[1][0],'Uganda')
 
-        results = process_command('countries sellers bars_sold top=5')
-        self.assertEqual(results[0][2], 764)
-        self.assertEqual(results[1][0], 'France')
+    def test_ride_process(self):
+        resultA=lyft_data().create_table
+        self.assertIn(resultA[0][2], 764)
+        self.assertEqual(resultA[1][0], 'France')
+        resultB=lyft_data().sort_table
 
 
 class TestRegionSearch(unittest.TestCase):

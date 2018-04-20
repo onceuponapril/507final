@@ -59,66 +59,58 @@ def make_request_using_cache(url,params=None):
 #2 Create DB
 # 3 WRITE INTO DB
 
-DBNAME='test.sqlite'
-conn = sqlite3.connect(DBNAME,check_same_thread=False)
-cur = conn.cursor()
-#
-statement = '''
-    DROP TABLE IF EXISTS 'EAT';
-'''
-# cur.execute(statement)
-
-statement = '''
-    DROP TABLE IF EXISTS 'RIDE';
-'''
-# cur.execute(statement)
-
-statement='''CREATE TABLE EAT(
-'Id' INTEGER NULL PRIMARY KEY AUTOINCREMENT,
-'City' TEXT NOT NULL,
-'Name' TEXT NOT NULL,
-'Price' TEXT,
-'Rating' NUMERIC,
-'address' TEXT,
-'lag_log' TEXT
-)'''
-# cur.execute(statement)
-# conn.commit()
-
-statement='''CREATE TABLE RIDE(
-'Id' INTEGER NOT NULL PRIMARY KEY,
-'Origin'TEXT NOT NULL,
-'Origin_geo' TEXT,
-'Name' TEXT,
-'Destination' TEXT,
-'Destination_geo' TEXT,
-'Estimated_minutes' TEXT,
-'Estimated_miles' TEXT,
-'Estimated_max_cost' TEXT,
-'Estimated_min_cost'TEXT,
-'EAT_ID'INTEGER,
-FOREIGN KEY(EAT_ID) REFERENCES EAT(Id))
-'''
-# cur.execute(statement)
-# conn.commit()
-# #
-#
-
-# 3.1 google maps
-class google_map():
-    DBNAME='test.sqlite'
+def create_first_table():
+    DBNAME='FoodieGo.sqlite'
     conn = sqlite3.connect(DBNAME,check_same_thread=False)
     cur = conn.cursor()
+    # #
+    statement = '''
+        DROP TABLE IF EXISTS 'EAT';
+    '''
+    cur.execute(statement)
 
-    def __init__(self,address):
-        self.addr=address
+    statement = '''
+        DROP TABLE IF EXISTS 'RIDE';
+    '''
+    cur.execute(statement)
+    #
+    statement='''CREATE TABLE EAT(
+    'Id' INTEGER NULL PRIMARY KEY AUTOINCREMENT,
+    'City' TEXT NOT NULL,
+    'Name' TEXT NOT NULL,
+    'Price' TEXT,
+    'Rating' NUMERIC,
+    'address' TEXT
+    )'''
+    cur.execute(statement)
+    conn.commit()
+    # conn.close()
+    statement='''CREATE TABLE RIDE(
+    'Id' INTEGER NOT NULL PRIMARY KEY,
+    'Origin'TEXT NOT NULL,
+    'Origin_geo' TEXT,
+    'Name' TEXT,
+    'Destination' TEXT,
+    'Destination_geo' TEXT,
+    'Estimated_minutes' REAL,
+    'Estimated_miles' REAL,
+    'Estimated_max_cost' REAL,
+    'Estimated_min_cost'REAL,
+    'EAT_ID'INTEGER,
+    FOREIGN KEY(EAT_ID) REFERENCES EAT(Id))
+    '''
+    cur.execute(statement)
+    conn.commit()
+# #
+# create_first_table()
 
-    def lat_log(self):
+# 3.1 google maps
+def google_map(address):
 
         map_url='https://maps.googleapis.com/maps/api/place/textsearch/json'
         params={}
         params['key']=map_api
-        params['query']=str(self.addr)
+        params['query']=str(address)
         req=make_request_using_cache(map_url,params=params)
         rstxt=json.loads(req)
         rs=rstxt['results']
@@ -132,89 +124,148 @@ class google_map():
 
 
 
-
+# print(google_map('North Quad,Ann Arbor'))
 # 3. yelp data
 
 # user_input_city='San Francisco'
 class Yelpeat():
-    DBNAME='test.sqlite'
-    conn = sqlite3.connect(DBNAME,check_same_thread=False)
-    cur = conn.cursor()
-    statement = '''
-        DROP TABLE IF EXISTS 'EAT';
-    '''
-    cur.execute(statement)
-    conn.commit()
-
-    statement='''CREATE TABLE EAT(
-    'Id' INTEGER NULL PRIMARY KEY AUTOINCREMENT,
-    'City' TEXT NOT NULL,
-    'Name' TEXT NOT NULL,
-    'Price' TEXT,
-    'Rating' NUMERIC,
-    'address' TEXT,
-    'lag_log' TEXT
-    )'''
-    cur.execute(statement)
-    conn.commit()
 
     def __init__(self,user_input_city):
         self.city=user_input_city
+        self.cachedict = {}
 
     def get_data(self):
+        DBNAME='FoodieGo.sqlite'
+        conn = sqlite3.connect(DBNAME,check_same_thread=False)
+        cur = conn.cursor()
+
         statement='SELECT * FROM EAT where EAT.City='+"'"+str(self.city)+"'"
-        statement+=' LIMIT 100'
         datalist=cur.execute(statement).fetchall()
         if datalist !=[]:
                 return datalist
         else:
-            self.create_db()
+            result = self.create_db()
+
+            # if not result:
+            #     return False
+
             statement='SELECT * FROM EAT where EAT.City='+"'"+str(self.city)+"'"
-            statement+=' LIMIT 100'
             datalist=cur.execute(statement).fetchall()
+            # self.output_cache()
+
             return datalist
+        conn.close()
 
     def create_db(self):
+        DBNAME='FoodieGo.sqlite'
+        conn = sqlite3.connect(DBNAME,check_same_thread=False)
+        cur = conn.cursor()
 
-                baseurl="https://www.yelp.com/"
-                search_url=baseurl+'search'
-                param={}
-                param['find_desc']="Top+100+Places+to+Eat"
-                param['find_loc']=self.city
-                n=range(11)
-                for i in n:
-                            param['start']=i*10
-                            html=make_request_using_cache(search_url,param)
-                            soup_a = BeautifulSoup(html, 'html.parser')
-                            list_of_eat=soup_a.find_all("li",class_="regular-search-result")
+        baseurl="https://www.yelp.com/"
+        search_url=baseurl+'search'
+        param={}
+        param['find_desc']="Top+100+Places+to+Eat"
+        param['find_loc']=self.city
+        n=range(11)
+        for i in n:
+            param['start']=i*10
+            html=make_request_using_cache(search_url,param)
+            soup_a = BeautifulSoup(html, 'html.parser')
+            list_of_eat=soup_a.find_all("li",class_="regular-search-result")
 
-                            for eat in list_of_eat:
-                                try:
-                                    name=eat.find('a',class_='biz-name').text.strip()
-                                    price=eat.find('span',class_="business-attribute price-range").text.strip()
-                                    rating=eat.find('div',class_='i-stars')['title'][:3]
-                                    add=eat.find('address').text.strip()
-                                    lat_log=google_map(add).lat_log()
+            for eat in list_of_eat:
+                try:
+                    name=eat.find('a',class_='biz-name').text.strip()
+                    price=eat.find('span',class_="business-attribute price-range").text.strip()
+                    rating=eat.find('div',class_='i-stars')['title'][:3]
+                    add=str(eat.find('address'))
+                    add = add.replace("<address>", "").replace("</address>", "").replace("<br>", " ").replace("<br/>", " ")
 
-                                    params=(self.city,name,price,rating,add,lat_log)
-                                    statement='''INSERT INTO EAT VALUES(Null,?,?,?,?,?,?)'''
-                                    cur.execute(statement,params)
-                                    conn.commit()
+                    params=(self.city,name,price,rating,add)
+                    statement='''INSERT INTO EAT VALUES(Null,?,?,?,?,?)'''
+                    cur.execute(statement,params)
+                    conn.commit()
 
-                                except:
-                                        pass
+                except:
+                    pass
+        conn.close()
+
+# print(Yelpeat('San_Francisco').create_db())
+
+        # scrap_raw=self.scrap_data()
+        # if scrap_raw==False:
+        #     return False
+        # else:
+        #     for list_of_eat in scrap_raw:
+        #         for eat in list_of_eat:
+        #                 try:
+        #                     name=eat.find('a',class_='biz-name').text.strip()
+        #                     price=eat.find('span',class_="business-attribute price-range").text.strip()
+        #                     rating=eat.find('div',class_='i-stars')['title'][:3]
+        #                     add=eat.find('address').text.strip()
+        #                     params=(self.city,name,price,rating,add)
+        #                     statement='''INSERT INTO EAT VALUES(Null,?,?,?,?,?)'''
+        #                     cur.execute(statement,params)
+        #                     conn.commit()
+        #
+        #                 except Exception as e:
+        #                             print(e)
+        #         conn.close()
+        #
+        #         return True
+                                    # tempDict = {}
+                                    # tempDict['name'] = name
+                                    # tempDict['price'] = price
+                                    # tempDict['rating'] = rating
+                                    # tempDict['address'] = add
+                                    # self.cachedict[self.city].append(tempDict)
+                                    # cur.execute(statement,params)
+                                    # conn.commit()
+
+
+    # def scrap_data(self):
+    #         baseurl="https://www.yelp.com/"
+    #         search_url=baseurl+'search'
+    #         param={}
+    #         param['find_desc']="Top+100+Places+to+Eat"
+    #         param['find_loc']=self.city
+    #         # self.cachedict[self.city] = []
+    #         list_of_scrap=[]
+    #         n=range(11)
+    #         count=0
+    #         for i in n:
+    #             # while count<100:
+    #                 param['start']=i*10
+    #                 html=make_request_using_cache(search_url,param)
+    #
+    #                 soup_a = BeautifulSoup(html, 'html.parser')
+    #                 list_of_eat=soup_a.find_all("li",class_="regular-search-result")
+    #                         # print(list_of_eat)
+    #                         # if list_of_eat==[]:
+    #                         #     return False
+    #                 # if list_of_eat==None:
+    #                 #         print('no information,try again')
+    #                 #         pass
+    #                 # else:
+    #                 #         count=+1
+    #                 list_of_scrap.append(list_of_eat)
+                    #         # print(list_of_scrap)
+                    # except:
+                    #     pass
+
+                    # except Exception as e:
+                    #             print(e)
 
 
 
-# print(Yelpeat("San Francisco").get_data())
+
+    # def output_cache(self):
+    #     with open('advanced_cache.json', 'w') as f:
+    #         f.write(json.dumps(self.cachedict))
+
 
 
 class lyft_data():
-    # DBNAME='test.sqlite'
-    # conn = sqlite3.connect(DBNAME,check_same_thread=False)
-    # cur = conn.cursor()
-    #
-
 
     def __init__(self):
         # self.conn = sqlite3.connect(DBNAME,check_same_thread=False)
@@ -257,11 +308,15 @@ class lyft_data():
         return est_dict
 
     def create_table(self,origin,list_of_dest):
+        DBNAME='FoodieGo.sqlite'
+        conn = sqlite3.connect(DBNAME,check_same_thread=False)
+        cur = conn.cursor()
         #drop table
         statement = '''
             DROP TABLE IF EXISTS 'RIDE';
         '''
         cur.execute(statement)
+        conn.commit()
 
         statement='''CREATE TABLE RIDE(
         'Id' INTEGER NOT NULL PRIMARY KEY,
@@ -270,29 +325,32 @@ class lyft_data():
         'Name' TEXT,
         'Destination' TEXT,
         'Destination_geo' TEXT,
-        'Estimated_minutes' TEXT,
-        'Estimated_miles' TEXT,
-        'Estimated_max_cost' TEXT,
-        'Estimated_min_cost'TEXT,
+        'Estimated_minutes' REAL,
+        'Estimated_miles' REAL,
+        'Estimated_max_cost' REAL,
+        'Estimated_min_cost'REAL,
         'EAT_ID'INTEGER,
         FOREIGN KEY(EAT_ID) REFERENCES EAT(Id))
         '''
         cur.execute(statement)
         conn.commit()
 
-        start_add=google_map(origin).lat_log()
+        start_add=google_map(origin)
 
         for fkid in list_of_dest:
-            statement_dest= "SELECT lag_log, name FROM EAT WHERE EAT.Id="
+            statement_dest= "SELECT Address, Name FROM EAT WHERE EAT.Id="
             statement_dest+=fkid
-            dest_add=cur.execute(statement_dest).fetchone()[0]
+            dest_eat=cur.execute(statement_dest).fetchone()[0]
+            dest_add = ""
+            try:
+                dest_add=google_map(dest_eat)
+            except:
+                print("Google place API error")
             dest_name=cur.execute(statement_dest).fetchone()[1]
             print(dest_name)
 
-            # for each in end_list:
-            # end_add=google_map(str(each).strip('()')).lat_log()
+
             ridedb=self.estmate_cost(start_add,dest_add)
-            # print(ridedb)
             param=(fkid,origin,start_add,dest_name,dest_add,ridedb['es_time'],ridedb['es_distance'],ridedb['es_cost_max'],ridedb['es_cost_min'])
             statement='''INSERT INTO RIDE (EAT_ID,Origin,Origin_geo,Name,Destination_geo,Estimated_minutes, Estimated_miles,Estimated_max_cost,Estimated_min_cost)
             VALUES(?,?,?,?,?,?,?,?,?)'''
@@ -305,23 +363,18 @@ class lyft_data():
 
         getdata='SELECT * FROM RIDE'
         lyft_db=cur.execute(getdata).fetchall()
+        conn.close()
 
         return lyft_db
 
     def sort_table(self, key):
-        statement="SELECT * FROM RIDE ORDER BY "
-        statement+=key
+        DBNAME='FoodieGo.sqlite'
+        conn = sqlite3.connect(DBNAME,check_same_thread=False)
+        cur = conn.cursor()
+
+        statement="SELECT * FROM RIDE ORDER BY {} ASC".format(key)
+        print(statement)
         lyft_up=cur.execute(statement).fetchall()
+        conn.close()
+
         return lyft_up
-
-
-
-
-# conn.close()
-
-#4 Interactive presentation
-# from flask import Flask, render_template, request
-# 1.user input city and number of resturant wanna check--TABLE
-# 2. sort by rating and price- choose resturants--TABLE
-# 3.INPUT YOUR ORIGIN--TABLE:ESTIMATION
-#4.MAP
